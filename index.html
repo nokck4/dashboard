@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Refrigeration Piping Designer</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #eef3f8;
+      --line: #d7dee8;
+      --text: #17202c;
+      --muted: #667386;
+      --blue: #5d96eb;
+      --red: #d65348;
+      --yellow: #efd45e;
+      --cyan: #68d8e8;
+      --orange: #ee8d45;
+      --purple: #8f72da;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      color: var(--text);
+      font-family: Arial, Tahoma, sans-serif;
+      background: var(--bg);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      background: #f8fafc;
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .mini {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .section {
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-title {
+      margin: 0 0 10px;
+      color: #526174;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .component-tile,
+    button,
+    input {
+      font: inherit;
+    }
+
+    .component-tile {
+      display: grid;
+      place-items: center;
+      min-height: 92px;
+      padding: 10px;
+      color: var(--text);
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      background: var(--panel);
+      cursor: grab;
+      user-select: none;
+    }
+
+    .component-tile:active {
+      cursor: grabbing;
+    }
+
+    .component-tile.active {
+      border-color: var(--cyan);
+      background: #eaf8fb;
+      box-shadow: inset 0 0 0 1px rgba(104, 216, 232, .28);
+    }
+
+    .component-tile svg {
+      width: 62px;
+      height: 48px;
+      margin-bottom: 6px;
+      stroke: #1b2635;
+      --icon-fill: #dce7f5;
+      --icon-detail: #1b2635;
+    }
+
+    .component-tile .body {
+      stroke: #1b2635;
+    }
+
+    .component-tile .detail {
+      stroke: #1b2635;
+    }
+
+    .component-tile[data-type="compressor"] .body {
+      fill: var(--icon-fill);
+    }
+
+    .component-tile[data-type="compressor"] .detail {
+      stroke: var(--icon-detail);
+    }
+
+    .component-tile[data-type="air"] .body {
+      fill: var(--icon-fill);
+    }
+
+    .component-tile[data-type="air"] .detail {
+      stroke: var(--icon-detail);
+    }
+
+    .component-tile[data-type="tank"] .body {
+      fill: var(--icon-fill);
+    }
+
+    .component-tile[data-type="tank"] .detail {
+      stroke: var(--icon-detail);
+    }
+
+    .component-tile[data-type="evap"] .detail {
+      stroke: var(--icon-detail);
+    }
+
+    .component-tile[data-type="compressor"] svg {
+      --icon-fill: #73a9ff;
+      --icon-detail: #1f5fbf;
+    }
+
+    .component-tile[data-type="air"] svg {
+      --icon-fill: #77dbc7;
+      --icon-detail: #168a78;
+    }
+
+    .component-tile[data-type="tank"] svg {
+      --icon-fill: #f2a65f;
+      --icon-detail: #a85a16;
+    }
+
+    .component-tile[data-type="evap"] svg {
+      --icon-fill: #d8ccff;
+      --icon-detail: #7b60d7;
+    }
+
+    .component-tile span {
+      display: block;
+      color: #526174;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tool-button,
+    .pipe-button,
+    .action-button {
+      height: 38px;
+      border: 1px solid #d2dae6;
+      border-radius: 8px;
+      color: #17202c;
+      background: var(--panel);
+      cursor: pointer;
+    }
+
+    .tool-button.active,
+    .pipe-button.active {
+      border-color: var(--cyan);
+      background: #eaf8fb;
+      box-shadow: inset 0 0 0 1px rgba(104, 216, 232, .28);
+    }
+
+    .pipe-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 4px;
+      border-radius: 99px;
+    }
+
+    .blue { background: var(--blue); }
+    .red { background: var(--red); }
+    .yellow { background: var(--yellow); }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      color: #526174;
+      font-size: 12px;
+    }
+
+    input {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      color: var(--text);
+      background: #ffffff;
+      outline: none;
+    }
+
+    .toolbar {
+      position: absolute;
+      top: 16px;
+      left: 296px;
+      right: 16px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toolgroup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid rgba(210, 218, 230, .95);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 12px 32px rgba(24, 36, 52, .14);
+      pointer-events: auto;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-width: 0;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #ffffff;
+      background-image:
+        linear-gradient(rgba(28, 42, 58, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(28, 42, 58, .055) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    #workspace {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .pipe {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 1px rgba(0, 0, 0, .4));
+      cursor: pointer;
+      pointer-events: all;
+    }
+
+    .pipe.dash {
+      stroke-dasharray: 12 10;
+    }
+
+    .pipe.selected {
+      stroke-width: 10;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, .48));
+    }
+
+    .pipe-hit {
+      fill: none;
+      stroke: rgba(255, 255, 255, .01);
+      stroke-width: 24;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      cursor: pointer;
+      pointer-events: all;
+    }
+
+    .pipe-preview {
+      fill: none;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 8 8;
+      opacity: .75;
+      pointer-events: none;
+    }
+
+    .node {
+      cursor: move;
+      --icon-fill: #dce7f5;
+      --icon-detail: #1b2635;
+    }
+
+    .node .body {
+      stroke: #1b2635;
+      stroke-width: 4;
+      fill: var(--icon-fill);
+    }
+
+    .node .detail {
+      stroke: var(--icon-detail);
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .node.compressor {
+      --icon-fill: #73a9ff;
+      --icon-detail: #1f5fbf;
+    }
+
+    .node.air {
+      --icon-fill: #77dbc7;
+      --icon-detail: #168a78;
+    }
+
+    .node.tank {
+      --icon-fill: #f2a65f;
+      --icon-detail: #a85a16;
+    }
+
+    .node.evap {
+      --icon-fill: #d8ccff;
+      --icon-detail: #7b60d7;
+    }
+
+    .node text {
+      fill: #9eaaba;
+      font-size: 16px;
+      text-anchor: middle;
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+      user-select: none;
+    }
+
+    .node .selection {
+      fill: transparent;
+      stroke: transparent;
+    }
+
+    .node.selected .selection {
+      stroke: var(--cyan);
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+    }
+
+    .connector {
+      fill: rgba(104, 216, 232, .12);
+      stroke: rgba(104, 216, 232, .65);
+      stroke-width: 2;
+      cursor: crosshair;
+    }
+
+    .tag rect {
+      fill: rgba(35, 70, 78, .75);
+      stroke: rgba(104, 216, 232, .6);
+      stroke-width: 2;
+    }
+
+    .tag.orange rect {
+      fill: rgba(88, 57, 33, .75);
+      stroke: rgba(238, 141, 69, .65);
+    }
+
+    .tag text {
+      font-size: 16px;
+      font-weight: 700;
+      fill: var(--cyan);
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .tag.orange text {
+      fill: var(--orange);
+    }
+
+    .note .selection {
+      fill: transparent;
+      stroke: transparent;
+    }
+
+    .note.selected .selection {
+      stroke: var(--cyan);
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+    }
+
+    .note text {
+      fill: var(--text);
+      font-size: 20px;
+      font-weight: 700;
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 5px;
+      stroke-linejoin: round;
+      cursor: move;
+      user-select: none;
+    }
+
+    .floating-help {
+      position: absolute;
+      left: 22px;
+      bottom: 18px;
+      max-width: 560px;
+      color: #5f6d7e;
+      font-size: 13px;
+      line-height: 1.55;
+      pointer-events: none;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 72vh;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .palette {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .toolbar {
+        position: fixed;
+        top: auto;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        flex-wrap: wrap;
+      }
+
+      .canvas-wrap {
+        height: 72vh;
+      }
+
+      .component-tile {
+        min-height: 82px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>ลากวางระบบท่อ</h1>
+          <p class="mini">ลากหรือคลิก component แล้ววางลงพื้นที่ จากนั้นใช้โหมดท่อคลิกจุดเชื่อมต่อเพื่อวาดเส้น</p>
+        </div>
+      </div>
+
+      <section class="section">
+        <p class="section-title">Component</p>
+        <div class="palette">
+          <div class="component-tile" draggable="true" data-type="compressor">
+            <svg viewBox="0 0 90 62" aria-hidden="true">
+              <use href="#icon-compressor"></use>
+            </svg>
+            <span>Comp</span>
+          </div>
+          <div class="component-tile" draggable="true" data-type="air">
+            <svg viewBox="0 0 90 62" aria-hidden="true">
+              <use href="#icon-air"></use>
+            </svg>
+            <span>Air</span>
+          </div>
+          <div class="component-tile" draggable="true" data-type="tank">
+            <svg viewBox="0 0 90 62" aria-hidden="true">
+              <use href="#icon-tank"></use>
+            </svg>
+            <span>ถัง</span>
+          </div>
+          <div class="component-tile" draggable="true" data-type="evap">
+            <svg viewBox="0 0 90 62" aria-hidden="true">
+              <use href="#icon-evap"></use>
+            </svg>
+            <span>Evap</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-title">เครื่องมือ</p>
+        <div class="control-row">
+          <button class="tool-button active" type="button" data-mode="select">เลือก/ย้าย</button>
+          <button class="tool-button" type="button" data-mode="pipe">วาดท่อ</button>
+        </div>
+        <div class="control-row">
+          <button class="pipe-button active" type="button" data-pipe="blue"><span class="swatch blue"></span>ฟ้า</button>
+          <button class="pipe-button" type="button" data-pipe="red"><span class="swatch red"></span>แดง</button>
+        </div>
+        <div class="control-row">
+          <button class="pipe-button" type="button" data-pipe="yellow"><span class="swatch yellow"></span>เหลือง</button>
+          <button class="tool-button" type="button" id="dashToggle">ท่อประ</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-title">ป้ายค่า</p>
+        <div class="field">
+          <label for="labelText">ข้อความ</label>
+          <input id="labelText" type="text" value="-10 °C" maxlength="18">
+        </div>
+        <div class="control-row">
+          <button class="action-button" type="button" id="addTemp">เพิ่ม Temp</button>
+          <button class="action-button" type="button" id="addPressure">เพิ่ม bar</button>
+        </div>
+        <div class="control-row">
+          <button class="action-button" type="button" id="placeText">วาง Text</button>
+          <button class="action-button" type="button" id="addTextNow">เพิ่ม Text</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-title">แก้ชื่อที่เลือก</p>
+        <div class="field">
+          <label for="selectedName">ชื่อ component / text</label>
+          <input id="selectedName" type="text" placeholder="คลิกเลือกก่อน" maxlength="28">
+        </div>
+        <div class="control-row">
+          <button class="action-button" type="button" id="applyRename">เปลี่ยนชื่อ</button>
+          <button class="action-button" type="button" id="copyToName">ใช้ข้อความบน</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="control-row">
+          <button class="action-button" type="button" id="clearSelection">ลบที่เลือก</button>
+          <button class="action-button" type="button" id="resetDemo">ตัวอย่าง</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="canvas-wrap" id="dropzone">
+      <div class="toolbar">
+        <div class="toolgroup">
+          <button class="action-button" type="button" id="zoomOut">-</button>
+          <button class="action-button" type="button" id="zoomIn">+</button>
+          <button class="action-button" type="button" id="fitView">Fit</button>
+        </div>
+        <div class="toolgroup">
+          <button class="action-button" type="button" id="exportSvg">Export SVG</button>
+        </div>
+      </div>
+      <svg id="workspace" viewBox="0 0 1800 1000" role="application" aria-label="พื้นที่ออกแบบระบบท่อ">
+        <defs>
+          <g id="icon-compressor">
+            <path class="body" fill="var(--icon-fill)" stroke="#1b2635" stroke-width="4" d="M20 42h44c8 0 14-6 14-14v-8H50v8H30V18H14v22h6z"></path>
+            <path class="body" fill="var(--icon-fill)" stroke="#1b2635" stroke-width="4" d="M10 36h10v18H10zM62 42h8v14h-8z"></path>
+            <path class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" stroke-linecap="round" d="M25 52v8M40 52v8M55 52v8"></path>
+          </g>
+          <g id="icon-air">
+            <path class="body" fill="var(--icon-fill)" stroke="#1b2635" stroke-width="4" d="M14 32h62v24H14z"></path>
+            <path class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" stroke-linecap="round" d="M20 42h48M22 50h42M18 62c2 6 8 6 10 0M38 62c2 6 8 6 10 0M58 62c2 6 8 6 10 0"></path>
+          </g>
+          <g id="icon-tank">
+            <path class="body" fill="var(--icon-fill)" stroke="#1b2635" stroke-width="4" d="M36 10h18v7c8 2 12 8 12 16v23H24V33c0-8 4-14 12-16z"></path>
+            <circle class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" cx="45" cy="38" r="8"></circle>
+            <path class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" stroke-linecap="round" d="M45 31v7l-4 5"></path>
+          </g>
+          <g id="icon-evap">
+            <rect class="body" x="20" y="10" width="58" height="44" fill="var(--icon-fill)" stroke="#1b2635" stroke-width="4"></rect>
+            <path class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14 10h12M14 54h12M20 18h42c10 0 10 16 0 16H31c-9 0-9 14 0 14h40M78 10v44"></path>
+          </g>
+          <g id="icon-valve">
+            <path class="detail" fill="none" stroke="var(--icon-detail)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M22 31l16-10v20zM68 31L52 21v20zM45 21v-9M35 12h20"></path>
+          </g>
+        </defs>
+        <g id="pipes"></g>
+        <path id="pipePreview" class="pipe-preview" d="" stroke="#5d96eb"></path>
+        <g id="items"></g>
+      </svg>
+      <div class="floating-help">Component/Text: ลากหรือคลิกจากแถบซ้ายแล้วคลิกวาง | โหมดวาดท่อ: คลิกพื้นที่ว่างเพื่อวางจุดหักมุม หรือคลิกจุดเชื่อมต่อเพื่อเริ่ม/จบท่อ | คลิกท่อ/อุปกรณ์/text แล้วกด Delete หรือปุ่มลบที่เลือก</div>
+    </section>
+  </main>
+
+  <script>
+    const svg = document.querySelector('#workspace');
+    const pipesLayer = document.querySelector('#pipes');
+    const itemsLayer = document.querySelector('#items');
+    const preview = document.querySelector('#pipePreview');
+    const dropzone = document.querySelector('#dropzone');
+    const colors = { blue: '#5d96eb', red: '#d65348', yellow: '#efd45e' };
+    const state = {
+      mode: 'select',
+      pipeColor: 'blue',
+      dashed: false,
+      nodes: [],
+      pipes: [],
+      tags: [],
+      notes: [],
+      selected: null,
+      drag: null,
+      drawing: null,
+      pendingComponent: null,
+      pendingText: null,
+      scale: 1
+    };
+
+    const componentDefaults = {
+      compressor: { label: 'Screw', w: 100, h: 84, ports: [[0, 34], [100, 34], [50, 84]], icon: '#icon-compressor' },
+      air: { label: 'Air Cond.', w: 110, h: 82, ports: [[55, 0], [55, 82]], icon: '#icon-air' },
+      tank: { label: 'HP', w: 78, h: 92, ports: [[39, 0], [39, 92]], icon: '#icon-tank' },
+      evap: { label: 'Evap.', w: 112, h: 90, ports: [[0, 50], [112, 50]], icon: '#icon-evap' }
+    };
+
+    function svgPoint(clientX, clientY) {
+      const point = svg.createSVGPoint();
+      point.x = clientX;
+      point.y = clientY;
+      return point.matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    function snap(v) {
+      return Math.round(v / 10) * 10;
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      state.pendingComponent = null;
+      state.pendingText = null;
+      document.querySelectorAll('.component-tile').forEach(tile => tile.classList.remove('active'));
+      document.querySelectorAll('[data-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+      svg.style.cursor = mode === 'pipe' ? 'crosshair' : 'default';
+      if (mode !== 'pipe') cancelDrawing();
+    }
+
+    function setPendingComponent(type) {
+      state.pendingComponent = type;
+      state.mode = 'select';
+      cancelDrawing();
+      document.querySelectorAll('[data-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'select'));
+      document.querySelectorAll('.component-tile').forEach(tile => tile.classList.toggle('active', tile.dataset.type === type));
+      svg.style.cursor = 'copy';
+    }
+
+    function setPendingText(text) {
+      state.pendingText = text || 'Text';
+      state.pendingComponent = null;
+      state.mode = 'select';
+      cancelDrawing();
+      document.querySelectorAll('[data-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'select'));
+      document.querySelectorAll('.component-tile').forEach(tile => tile.classList.remove('active'));
+      svg.style.cursor = 'copy';
+    }
+
+    function setPipeColor(color) {
+      state.pipeColor = color;
+      preview.setAttribute('stroke', colors[color]);
+      document.querySelectorAll('[data-pipe]').forEach(btn => btn.classList.toggle('active', btn.dataset.pipe === color));
+    }
+
+    function orthogonalPath(points) {
+      if (!points.length) return '';
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        if (prev.x !== curr.x && prev.y !== curr.y) {
+          d += ` L ${curr.x} ${prev.y}`;
+        }
+        d += ` L ${curr.x} ${curr.y}`;
+      }
+      return d;
+    }
+
+    function createSvgEl(tag, attrs = {}) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+      return el;
+    }
+
+    function addComponent(type, x, y, label) {
+      const def = componentDefaults[type];
+      const node = {
+        id: crypto.randomUUID(),
+        type,
+        label: label || nextLabel(def.label),
+        x: snap(x - def.w / 2),
+        y: snap(y - def.h / 2),
+        w: def.w,
+        h: def.h,
+        ports: def.ports,
+        icon: def.icon
+      };
+      state.nodes.push(node);
+      render();
+      selectItem(node.id);
+      return node;
+    }
+
+    function nextLabel(base) {
+      const count = state.nodes.filter(n => n.label.startsWith(base)).length + 1;
+      if (base.endsWith('.')) return `${base}${count}`;
+      if (base === 'Screw') return `Screw #${count}`;
+      return count > 1 ? `${base} ${count}` : base;
+    }
+
+    function addTag(x, y, text, tone = 'cyan') {
+      state.tags.push({ id: crypto.randomUUID(), x: snap(x), y: snap(y), text, tone });
+      render();
+    }
+
+    function addNote(x, y, text) {
+      const note = { id: crypto.randomUUID(), x: snap(x), y: snap(y), text: text || 'Text' };
+      state.notes.push(note);
+      render();
+      selectItem(note.id);
+      return note;
+    }
+
+    function render() {
+      pipesLayer.replaceChildren();
+      itemsLayer.replaceChildren();
+
+      state.pipes.forEach(pipe => {
+        const d = orthogonalPath(pipe.points);
+        const path = createSvgEl('path', {
+          class: `pipe${pipe.dashed ? ' dash' : ''}${state.selected === pipe.id ? ' selected' : ''}`,
+          d,
+          stroke: colors[pipe.color]
+        });
+        const hit = createSvgEl('path', {
+          class: 'pipe-hit',
+          d
+        });
+        const selectPipe = evt => {
+          evt.stopPropagation();
+          selectItem(pipe.id);
+        };
+        path.dataset.id = pipe.id;
+        hit.dataset.id = pipe.id;
+        path.addEventListener('pointerdown', selectPipe);
+        path.addEventListener('click', selectPipe);
+        hit.addEventListener('pointerdown', selectPipe);
+        hit.addEventListener('click', selectPipe);
+        pipesLayer.appendChild(path);
+        pipesLayer.appendChild(hit);
+      });
+
+      state.tags.forEach(tag => {
+        const group = createSvgEl('g', { class: `tag ${tag.tone === 'orange' ? 'orange' : ''}`, transform: `translate(${tag.x} ${tag.y})` });
+        group.dataset.id = tag.id;
+        group.appendChild(createSvgEl('rect', { x: -58, y: -20, width: 116, height: 40, rx: 6 }));
+        const text = createSvgEl('text', { x: 0, y: 1 });
+        text.textContent = tag.text;
+        group.appendChild(text);
+        group.addEventListener('pointerdown', evt => startDrag(evt, tag.id, 'tag'));
+        itemsLayer.appendChild(group);
+      });
+
+      state.notes.forEach(note => {
+        const width = Math.max(80, note.text.length * 13 + 24);
+        const group = createSvgEl('g', { class: `note ${state.selected === note.id ? 'selected' : ''}`, transform: `translate(${note.x} ${note.y})` });
+        group.dataset.id = note.id;
+        group.appendChild(createSvgEl('rect', { class: 'selection', x: -12, y: -26, width, height: 38, rx: 6 }));
+        const text = createSvgEl('text', { x: 0, y: 0 });
+        text.textContent = note.text;
+        group.appendChild(text);
+        group.addEventListener('pointerdown', evt => startDrag(evt, note.id, 'note'));
+        itemsLayer.appendChild(group);
+      });
+
+      state.nodes.forEach(node => {
+        const group = createSvgEl('g', { class: `node ${node.type} ${state.selected === node.id ? 'selected' : ''}`, transform: `translate(${node.x} ${node.y})` });
+        group.dataset.id = node.id;
+        group.appendChild(createSvgEl('rect', { class: 'selection', x: -8, y: -8, width: node.w + 16, height: node.h + 34, rx: 6 }));
+        const icon = createSvgEl('use', { href: node.icon, x: 5, y: 0, width: node.w - 10, height: node.h - 24 });
+        group.appendChild(icon);
+        const text = createSvgEl('text', { x: node.w / 2, y: node.h + 14 });
+        text.textContent = node.label;
+        group.appendChild(text);
+        node.ports.forEach((port, index) => {
+          const c = createSvgEl('circle', { class: 'connector', cx: port[0], cy: port[1], r: 8 });
+          c.dataset.node = node.id;
+          c.dataset.port = index;
+          c.addEventListener('pointerdown', evt => onConnectorDown(evt, node, index));
+          group.appendChild(c);
+        });
+        group.addEventListener('pointerdown', evt => startDrag(evt, node.id, 'node'));
+        itemsLayer.appendChild(group);
+      });
+    }
+
+    function selectItem(id) {
+      state.selected = id;
+      render();
+      updateSelectedNameInput();
+    }
+
+    function selectedEditableItem() {
+      return state.nodes.find(n => n.id === state.selected)
+        || state.tags.find(t => t.id === state.selected)
+        || state.notes.find(n => n.id === state.selected);
+    }
+
+    function updateSelectedNameInput() {
+      const input = document.querySelector('#selectedName');
+      const item = selectedEditableItem();
+      input.value = item ? (item.label || item.text || '') : '';
+    }
+
+    function renameSelected() {
+      const item = selectedEditableItem();
+      const value = document.querySelector('#selectedName').value.trim();
+      if (!item || !value) return;
+      if ('label' in item) item.label = value;
+      if ('text' in item) item.text = value;
+      render();
+    }
+
+    function startDrag(evt, id, kind) {
+      if (state.mode === 'pipe' && kind === 'node') return;
+      evt.stopPropagation();
+      const pt = svgPoint(evt.clientX, evt.clientY);
+      const item = kind === 'node'
+        ? state.nodes.find(n => n.id === id)
+        : kind === 'tag'
+          ? state.tags.find(t => t.id === id)
+          : state.notes.find(n => n.id === id);
+      state.drag = { id, kind, dx: pt.x - item.x, dy: pt.y - item.y };
+      selectItem(id);
+      svg.setPointerCapture(evt.pointerId);
+    }
+
+    function onConnectorDown(evt, node, index) {
+      if (state.mode !== 'pipe') return;
+      evt.stopPropagation();
+      const p = portPoint(node, index);
+      if (!state.drawing) {
+        state.drawing = { points: [p], color: state.pipeColor, dashed: state.dashed };
+      } else {
+        state.drawing.points.push(p);
+        finishDrawing();
+      }
+      updatePreview(p);
+    }
+
+    function portPoint(node, index) {
+      const port = node.ports[index];
+      return { x: node.x + port[0], y: node.y + port[1] };
+    }
+
+    function addPipePoint(x, y) {
+      const p = { x: snap(x), y: snap(y) };
+      if (!state.drawing) {
+        state.drawing = { points: [p], color: state.pipeColor, dashed: state.dashed };
+      } else {
+        state.drawing.points.push(p);
+      }
+      updatePreview(p);
+    }
+
+    function finishDrawing() {
+      if (state.drawing && state.drawing.points.length > 1) {
+        state.pipes.push({
+          id: crypto.randomUUID(),
+          points: state.drawing.points.slice(),
+          color: state.drawing.color,
+          dashed: state.drawing.dashed
+        });
+      }
+      cancelDrawing();
+      render();
+    }
+
+    function cancelDrawing() {
+      state.drawing = null;
+      preview.setAttribute('d', '');
+    }
+
+    function updatePreview(mousePoint) {
+      if (!state.drawing) return;
+      const points = state.drawing.points.concat(mousePoint || []);
+      preview.setAttribute('stroke', colors[state.drawing.color]);
+      preview.setAttribute('d', orthogonalPath(points));
+    }
+
+    function deleteSelected() {
+      if (!state.selected) return;
+      state.nodes = state.nodes.filter(n => n.id !== state.selected);
+      state.tags = state.tags.filter(t => t.id !== state.selected);
+      state.notes = state.notes.filter(n => n.id !== state.selected);
+      state.pipes = state.pipes.filter(p => p.id !== state.selected);
+      state.selected = null;
+      updateSelectedNameInput();
+      render();
+    }
+
+    function clearAll() {
+      state.nodes = [];
+      state.pipes = [];
+      state.tags = [];
+      state.notes = [];
+      state.selected = null;
+      cancelDrawing();
+      render();
+    }
+
+    function seedDemo() {
+      clearAll();
+      addComponent('evap', 360, 120, 'Evap.1');
+      addComponent('evap', 690, 120, 'Evap.2');
+      addComponent('tank', 960, 130, 'HP');
+      addComponent('compressor', 190, 430, 'Screw #1');
+      addComponent('compressor', 370, 430, 'Screw #2');
+      addComponent('compressor', 550, 430, 'Screw #3');
+      addComponent('compressor', 730, 430, 'Screw #4');
+      addComponent('compressor', 1020, 430, 'Screw #5');
+      addComponent('compressor', 1200, 430, 'Screw #6');
+      addComponent('compressor', 1380, 430, 'Screw #7');
+      addComponent('air', 300, 900, 'Spiral Freezer');
+      addComponent('air', 760, 900, 'Chill Spiral');
+      addComponent('air', 1180, 900, 'Chill room');
+      addComponent('air', 1600, 900, 'Air Cond.');
+      addComponent('tank', 1370, 140, 'Inter');
+      state.pipes.push(
+        { id: crypto.randomUUID(), color: 'blue', dashed: false, points: [{ x: 260, y: 120 }, { x: 1320, y: 120 }, { x: 1320, y: 90 } ] },
+        { id: crypto.randomUUID(), color: 'blue', dashed: false, points: [{ x: 170, y: 430 }, { x: 660, y: 430 }] },
+        { id: crypto.randomUUID(), color: 'blue', dashed: false, points: [{ x: 120, y: 470 }, { x: 120, y: 650 }, { x: 980, y: 650 }] },
+        { id: crypto.randomUUID(), color: 'blue', dashed: false, points: [{ x: 1120, y: 650 }, { x: 1240, y: 650 }, { x: 1240, y: 470 }] },
+        { id: crypto.randomUUID(), color: 'red', dashed: false, points: [{ x: 720, y: 390 }, { x: 1030, y: 390 }, { x: 1030, y: 210 }] },
+        { id: crypto.randomUUID(), color: 'red', dashed: true, points: [{ x: 1045, y: 390 }, { x: 1370, y: 390 }, { x: 1370, y: 170 }] },
+        { id: crypto.randomUUID(), color: 'red', dashed: false, points: [{ x: 1110, y: 430 }, { x: 1360, y: 430 }] },
+        { id: crypto.randomUUID(), color: 'red', dashed: false, points: [{ x: 1415, y: 390 }, { x: 1415, y: 120 }] },
+        { id: crypto.randomUUID(), color: 'yellow', dashed: false, points: [{ x: 210, y: 880 }, { x: 920, y: 880 }, { x: 920, y: 740 }] },
+        { id: crypto.randomUUID(), color: 'yellow', dashed: false, points: [{ x: 1100, y: 880 }, { x: 1540, y: 880 }] },
+        { id: crypto.randomUUID(), color: 'yellow', dashed: false, points: [{ x: 1130, y: 880 }, { x: 1130, y: 740 }] }
+      );
+      addTag(360, 185, '-40 °C');
+      addTag(1030, 610, '-10 °C');
+      addTag(1200, 120, '34.5 °C');
+      addTag(1500, 90, '36 °C');
+      addTag(1210, 170, '12.3 bar', 'orange');
+      state.selected = null;
+      render();
+    }
+
+    document.querySelectorAll('.component-tile').forEach(tile => {
+      tile.addEventListener('dragstart', evt => {
+        evt.dataTransfer.setData('text/plain', tile.dataset.type);
+      });
+      tile.addEventListener('click', () => setPendingComponent(tile.dataset.type));
+    });
+
+    dropzone.addEventListener('dragover', evt => evt.preventDefault());
+    dropzone.addEventListener('drop', evt => {
+      evt.preventDefault();
+      const type = evt.dataTransfer.getData('text/plain');
+      if (!componentDefaults[type]) return;
+      const pt = svgPoint(evt.clientX, evt.clientY);
+      addComponent(type, pt.x, pt.y);
+    });
+
+    svg.addEventListener('pointerdown', evt => {
+      const pipeTarget = evt.target.closest?.('.pipe-hit, .pipe');
+      if (pipeTarget) {
+        evt.stopPropagation();
+        selectItem(pipeTarget.dataset.id);
+        return;
+      }
+      if (evt.button === 2) {
+        cancelDrawing();
+        return;
+      }
+      if (evt.target !== svg) return;
+      const pt = svgPoint(evt.clientX, evt.clientY);
+      if (state.pendingComponent) {
+        addComponent(state.pendingComponent, pt.x, pt.y);
+        state.pendingComponent = null;
+        document.querySelectorAll('.component-tile').forEach(tile => tile.classList.remove('active'));
+        svg.style.cursor = 'default';
+      } else if (state.pendingText) {
+        addNote(pt.x, pt.y, state.pendingText);
+        state.pendingText = null;
+        svg.style.cursor = 'default';
+      } else if (state.mode === 'pipe') {
+        addPipePoint(pt.x, pt.y);
+      } else {
+        state.selected = null;
+        updateSelectedNameInput();
+        render();
+      }
+    });
+
+    svg.addEventListener('click', evt => {
+      const pipeTarget = evt.target.closest?.('.pipe-hit, .pipe');
+      if (pipeTarget) {
+        evt.stopPropagation();
+        selectItem(pipeTarget.dataset.id);
+      }
+    }, true);
+
+    svg.addEventListener('pointermove', evt => {
+      const pt = svgPoint(evt.clientX, evt.clientY);
+      if (state.drag) {
+        const target = state.drag.kind === 'node'
+          ? state.nodes.find(n => n.id === state.drag.id)
+          : state.drag.kind === 'tag'
+            ? state.tags.find(t => t.id === state.drag.id)
+            : state.notes.find(n => n.id === state.drag.id);
+        if (target) {
+          target.x = snap(pt.x - state.drag.dx);
+          target.y = snap(pt.y - state.drag.dy);
+          render();
+        }
+      } else if (state.drawing) {
+        updatePreview({ x: snap(pt.x), y: snap(pt.y) });
+      }
+    });
+
+    svg.addEventListener('pointerup', evt => {
+      if (state.drag) svg.releasePointerCapture(evt.pointerId);
+      state.drag = null;
+    });
+
+    svg.addEventListener('contextmenu', evt => evt.preventDefault());
+
+    document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+    document.querySelectorAll('[data-pipe]').forEach(btn => btn.addEventListener('click', () => setPipeColor(btn.dataset.pipe)));
+    document.querySelector('#dashToggle').addEventListener('click', evt => {
+      state.dashed = !state.dashed;
+      evt.currentTarget.classList.toggle('active', state.dashed);
+    });
+    document.querySelector('#clearSelection').addEventListener('click', deleteSelected);
+    document.querySelector('#resetDemo').addEventListener('click', seedDemo);
+    document.querySelector('#addTemp').addEventListener('click', () => addTag(980, 210, document.querySelector('#labelText').value || '-10 °C'));
+    document.querySelector('#addPressure').addEventListener('click', () => addTag(1180, 180, document.querySelector('#labelText').value || '12.3 bar', 'orange'));
+    document.querySelector('#placeText').addEventListener('click', () => setPendingText(document.querySelector('#labelText').value));
+    document.querySelector('#addTextNow').addEventListener('click', () => addNote(920, 300, document.querySelector('#labelText').value || 'Text'));
+    document.querySelector('#applyRename').addEventListener('click', renameSelected);
+    document.querySelector('#copyToName').addEventListener('click', () => {
+      document.querySelector('#selectedName').value = document.querySelector('#labelText').value;
+      renameSelected();
+    });
+    document.querySelector('#zoomIn').addEventListener('click', () => zoom(.86));
+    document.querySelector('#zoomOut').addEventListener('click', () => zoom(1.16));
+    document.querySelector('#fitView').addEventListener('click', () => svg.setAttribute('viewBox', '0 0 1800 1000'));
+    document.querySelector('#exportSvg').addEventListener('click', exportCurrentSvg);
+
+    function zoom(multiplier) {
+      const box = svg.viewBox.baseVal;
+      const nextW = Math.max(500, Math.min(3200, box.width * multiplier));
+      const nextH = Math.max(280, Math.min(1800, box.height * multiplier));
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      svg.setAttribute('viewBox', `${cx - nextW / 2} ${cy - nextH / 2} ${nextW} ${nextH}`);
+    }
+
+    function collectPageCss() {
+      return Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function exportCurrentSvg() {
+      const copy = svg.cloneNode(true);
+      copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      copy.querySelector('#pipePreview')?.remove();
+      copy.querySelectorAll('.pipe-hit').forEach(el => el.remove());
+
+      const defs = copy.querySelector('defs') || createSvgEl('defs');
+      if (!defs.parentNode) copy.prepend(defs);
+
+      const style = createSvgEl('style');
+      style.textContent = collectPageCss();
+      defs.prepend(style);
+
+      const pattern = createSvgEl('pattern', {
+        id: 'export-grid',
+        width: 40,
+        height: 40,
+        patternUnits: 'userSpaceOnUse'
+      });
+      pattern.appendChild(createSvgEl('path', {
+        d: 'M 40 0 H 0 V 40',
+        fill: 'none',
+        stroke: '#1c2a3a',
+        'stroke-opacity': '.055',
+        'stroke-width': 1
+      }));
+      defs.appendChild(pattern);
+
+      const [x, y, width, height] = copy.getAttribute('viewBox').split(/\s+/).map(Number);
+      const bg = createSvgEl('rect', { x, y, width, height, fill: 'url(#export-grid)' });
+      defs.insertAdjacentElement('afterend', bg);
+
+      const blob = new Blob([copy.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'piping-layout.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    window.addEventListener('keydown', evt => {
+      if (evt.key === 'Escape') cancelDrawing();
+      if (evt.key === 'Delete' || evt.key === 'Backspace') deleteSelected();
+      if (evt.key.toLowerCase() === 'p') setMode('pipe');
+      if (evt.key.toLowerCase() === 'v') setMode('select');
+      if (evt.key === 'Enter' && state.drawing) finishDrawing();
+    });
+
+    seedDemo();
+  </script>
+</body>
+</html>
